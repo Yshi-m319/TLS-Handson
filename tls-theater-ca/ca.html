@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TLS Discord Theater — 🏛️ CA役（主催者）マニュアル</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans+JP:wght@300;400;600&display=swap');
+
+:root {
+  --bg:        #f5f2eb;
+  --bg2:       #ede9df;
+  --bg3:       #e4dfd3;
+  --ink:       #1a1714;
+  --ink2:      #4a4540;
+  --ink3:      #8a837a;
+  --rule:      #c8c0b4;
+  --accent:    #5a1a8a;
+  --accent-bg: #f0e8f8;
+  --accent-bd: #c8a0e0;
+  --code-bg:   #1a1714;
+  --code-fg:   #e8e0d4;
+  --code-green:#7ec87e;
+  --code-blue: #7eb8e8;
+  --code-yel:  #d4b87e;
+  --code-dim:  #7a736a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans JP', sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+header {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 28px 48px 24px;
+  position: relative; overflow: hidden;
+  border-bottom: 4px solid var(--accent);
+}
+header::after {
+  content: 'CA';
+  position: absolute; right: 40px; top: 50%;
+  transform: translateY(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 120px; font-weight: 600;
+  color: rgba(255,255,255,0.04); letter-spacing: -4px;
+  pointer-events: none;
+}
+.hdr-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+  color: #c8a0e0; margin-bottom: 8px;
+}
+header h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 20px; font-weight: 500;
+  letter-spacing: -.02em; color: #fff; margin-bottom: 4px;
+}
+.hdr-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: rgba(255,255,255,0.35);
+  margin-bottom: 14px;
+}
+.legend { display: flex; gap: 20px; flex-wrap: wrap; }
+.leg {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: rgba(255,255,255,0.45);
+}
+.leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.leg-dot.you  { background: #c8a0e0; }
+.leg-dot.disc { background: #8a8ef8; }
+
+.body-wrap {
+  max-width: 860px; margin: 0 auto;
+  padding: 28px 40px 80px;
+}
+
+.phase { margin: 28px 0 0; }
+.phase-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink3);
+  border-top: 2px solid var(--ink);
+  padding-top: 7px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 12px;
+}
+.phase-title::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+
+.step {
+  display: grid; grid-template-columns: 175px 1fr;
+  border: 1px solid var(--rule);
+  border-radius: 3px; overflow: hidden; margin-bottom: 8px;
+}
+.step.you-step { border-left: 3px solid var(--accent); }
+
+.step-meta {
+  padding: 12px 14px; border-right: 1px solid var(--rule);
+  display: flex; flex-direction: column; gap: 5px;
+  background: var(--bg2);
+}
+.step-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em; color: var(--ink3);
+}
+.step-name { font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.actor-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 2px 7px; border-radius: 2px; margin-top: 3px; width: fit-content;
+  background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-bd);
+}
+
+.step-body {
+  padding: 12px 16px; background: #fff;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.step-desc { font-size: 12px; color: var(--ink2); line-height: 1.65; }
+.step-desc code {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  background: var(--bg2); padding: 1px 5px; border-radius: 2px; color: var(--ink);
+}
+.step-desc strong { color: var(--ink); }
+
+.wait-block {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg2); border: 1px dashed var(--rule);
+  border-radius: 3px; margin-bottom: 8px;
+}
+.wait-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
+.wait-text { font-size: 12px; color: var(--ink3); line-height: 1.6; }
+.wait-text strong { color: var(--ink2); }
+
+.cmd-block { background: var(--code-bg); border-radius: 3px; overflow: hidden; margin-top: 2px; }
+.cmd-block + .cmd-block { margin-top: 6px; }
+.cmd-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 12px;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.cmd-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+.copy-btn {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  color: rgba(255,255,255,0.3); background: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 2px 8px; border-radius: 2px; cursor: pointer; transition: all .15s;
+}
+.copy-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+.copy-btn.ok { color: var(--code-green); border-color: var(--code-green); }
+pre {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; line-height: 1.85;
+  padding: 12px 16px; overflow-x: auto; color: var(--code-fg); white-space: pre;
+}
+.c  { color: var(--code-dim); }
+.k  { color: var(--code-green); }
+.f  { color: var(--code-blue); }
+.v  { color: var(--code-yel); }
+.s  { color: #e8a87e; }
+.o  { color: #a878d8; }
+
+.discord-row {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 9px 12px;
+  background: rgba(88,101,242,0.06); border: 1px solid rgba(88,101,242,0.2);
+  border-radius: 3px; font-size: 12px; color: #3d47b8; line-height: 1.6;
+}
+.discord-row .icon { font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+.discord-template {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  background: rgba(88,101,242,0.07);
+  padding: 7px 10px; border-radius: 2px; margin-top: 5px;
+  color: var(--ink2); white-space: pre-wrap;
+}
+
+.note {
+  display: flex; gap: 8px; padding: 8px 12px;
+  background: #fff8e8; border: 1px solid #e0c870;
+  border-radius: 3px; font-size: 11.5px; color: #6a4a00; line-height: 1.65;
+}
+.note .ico { flex-shrink: 0; }
+
+.secret-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 4px 10px; border-radius: 2px;
+  background: rgba(192,64,64,0.08); color: #c04040;
+  border: 1px solid rgba(192,64,64,0.25);
+}
+
+/* ── 役割全体フロー図 ── */
+.flow-overview {
+  background: var(--bg2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+.flow-overview h3 {
+  font-size: 9px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--ink3); margin-bottom: 12px;
+}
+.flow-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.flow-row:last-child { border-bottom: none; }
+.flow-who {
+  font-size: 10px; font-weight: 600; width: 80px; flex-shrink: 0;
+}
+.flow-who.ca     { color: var(--accent); }
+.flow-who.server { color: #1a6640; }
+.flow-who.client { color: #1a4a8a; }
+.flow-what { color: var(--ink2); font-size: 11px; }
+.flow-timing {
+  margin-left: auto; font-size: 9px; color: var(--ink3);
+  white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+  header { padding: 20px; }
+  header::after { display: none; }
+  .body-wrap { padding: 20px 14px 60px; }
+  .step { grid-template-columns: 1fr; }
+  .step-meta { border-right: none; border-bottom: 1px solid var(--rule); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-eyebrow">TLS Discord Theater — Command Reference</div>
+  <h1>🏛️ CA役（主催者）マニュアル</h1>
+  <div class="hdr-sub">openssl / python3 / macOS — セッション全体を仕切る役割</div>
+  <div class="legend">
+    <span class="leg"><span class="leg-dot you"></span>あなたの操作</span>
+    <span class="leg"><span class="leg-dot disc"></span>Discordに投稿 / 送付</span>
+  </div>
+</header>
+
+<div class="body-wrap">
+
+  <!-- 全体役割フロー -->
+  <div class="flow-overview">
+    <h3>全体の役割分担</h3>
+    <div class="flow-row">
+      <span class="flow-who ca">🏛️ CA（あなた）</span>
+      <span class="flow-what">CA鍵・証明書を生成し、サーバーのCSRに署名して server.crt を発行する</span>
+      <span class="flow-timing">セッション前</span>
+    </div>
+    <div class="flow-row">
+      <span class="flow-who ca">🏛️ CA（あなた）</span>
+      <span class="flow-what">ca.crt を全参加者に配布する（ルートCA証明書ストアの比喩）</span>
+      <span class="flow-timing">セッション前</span>
+    </div>
+    <div class="flow-row">
+      <span class="flow-who server">🖥️ サーバー</span>
+      <span class="flow-what">ClientHello受信 → ServerHello/Certificate送信 → PMS復号 → 鍵導出 → Finished</span>
+      <span class="flow-timing">当日</span>
+    </div>
+    <div class="flow-row">
+      <span class="flow-who client">💻 クライアント</span>
+      <span class="flow-what">ClientHello送信 → 証明書検証 → PMS生成/暗号化 → 鍵導出 → Finished → 暗号文送信</span>
+      <span class="flow-timing">当日</span>
+    </div>
+  </div>
+
+  <!-- PHASE 0 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 0 ── CA鍵・ルート証明書の生成（セッション前）</div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 1</span>
+        <span class="step-name">CA 秘密鍵と自己署名証明書を生成する</span>
+        <span class="actor-tag">🏛️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="secret-badge">🔒 ca.key は絶対に公開しない — これが信頼の根拠</div>
+        <div class="step-desc" style="margin-top:6px">
+          <code>ca.key</code> が漏洩すると攻撃者が偽のサーバー証明書を発行できる。
+          実世界の DigiCert や Let's Encrypt が厳重に保管しているのと同じ秘密。
+        </div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="k">mkdir</span> tls-ca && <span class="k">cd</span> tls-ca
+
+<span class="c"># CA 秘密鍵</span>
+<span class="k">openssl</span> <span class="f">genrsa</span> <span class="f">-out</span> ca.key 2048
+
+<span class="c"># CA 自己署名証明書（有効期限 1日）</span>
+<span class="k">openssl</span> <span class="f">req</span> <span class="f">-new</span> <span class="f">-x509</span> <span class="f">-days</span> 1 \
+  <span class="f">-key</span> ca.key <span class="f">-out</span> ca.crt \
+  <span class="f">-subj</span> <span class="s">"/CN=TLS-Theater-CA"</span>
+
+<span class="c"># 内容を確認</span>
+<span class="k">openssl</span> <span class="f">x509</span> <span class="f">-in</span> ca.crt <span class="f">-noout</span> <span class="f">-subject</span> <span class="f">-dates</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 1 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 1 ── サーバーの CSR に署名して server.crt を発行する</div>
+
+    <div class="wait-block">
+      <span class="wait-icon">⏳</span>
+      <div class="wait-text"><strong>サーバー役待ち</strong> — サーバー役が <code>server.csr</code> を作成して送ってくるまで待つ</div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 2</span>
+        <span class="step-name">CSR を受け取り・保存する</span>
+        <span class="actor-tag">🏛️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">サーバー役から送られてきた <code>-----BEGIN CERTIFICATE REQUEST-----</code> 〜 <code>-----END CERTIFICATE REQUEST-----</code> を保存する。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="c"># CSR を書き出す（BEGIN〜END ごと）</span>
+<span class="k">cat</span> > server.csr  <span class="c"># 貼り付けて Ctrl+D</span>
+
+<span class="c"># CSR の内容を確認（CN が TLS-Theater-Server になっていれば OK）</span>
+<span class="k">openssl</span> <span class="f">req</span> <span class="f">-in</span> server.csr <span class="f">-noout</span> <span class="f">-subject</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 3</span>
+        <span class="step-name">CSR に署名して server.crt を発行する</span>
+        <span class="actor-tag">🏛️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">
+          <code>ca.key</code> で署名することで「このサーバーはCAが認めた正規のサーバーである」という証明書が完成する。
+          これが実世界の証明書発行プロセスそのもの。
+        </div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="k">openssl</span> <span class="f">x509</span> <span class="f">-req</span> <span class="f">-days</span> 1 \
+  <span class="f">-in</span>     server.csr \
+  <span class="f">-CA</span>     ca.crt \
+  <span class="f">-CAkey</span>  ca.key \
+  <span class="f">-CAcreateserial</span> \
+  <span class="f">-out</span>    server.crt
+
+<span class="c"># 署名が通っているか確認</span>
+<span class="k">openssl</span> <span class="f">verify</span> <span class="f">-CAfile</span> ca.crt server.crt
+<span class="o"># → server.crt: OK</span>
+
+<span class="c"># フィンガープリント（参加者への確認用）</span>
+<span class="k">openssl</span> <span class="f">x509</span> <span class="f">-in</span> server.crt <span class="f">-fingerprint</span> <span class="f">-sha256</span> <span class="f">-noout</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 4</span>
+        <span class="step-name">server.crt をサーバー役に返す</span>
+        <span class="actor-tag">🏛️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">署名済み証明書をサーバー役に渡す。セッション当日に Discord に貼るのはサーバー役の仕事。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="k">cat</span> server.crt</pre>
+        </div>
+        <div class="discord-row">
+          <span class="icon">💬</span>
+          <div>DM などでサーバー役に送る
+            <div class="discord-template">署名しました。これがあなたの証明書です。
+当日の Certificate ステップでこれを Discord に貼ってください。
+
+-----BEGIN CERTIFICATE-----
+&lt;cat の出力をそのまま貼る&gt;
+-----END CERTIFICATE-----</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 2 ── ca.crt を全参加者に配布する</div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 5</span>
+        <span class="step-name">ca.crt を全員に配布する</span>
+        <span class="actor-tag">🏛️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">
+          <code>ca.crt</code> は秘密情報ではなく、ブラウザやOSに組み込まれた<strong>ルートCA証明書ストア</strong>に相当する。
+          セッション前に Discord の全員が見えるチャンネルに貼ってよい。
+          クライアント役はこれを使ってサーバー証明書を検証する。
+        </div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="k">cat</span> ca.crt</pre>
+        </div>
+        <div class="discord-row">
+          <span class="icon">💬</span>
+          <div>全員が見えるチャンネルにセッション前に投稿する
+            <div class="discord-template">【事前配布】今日のセッションで使うルートCA証明書です。
+クライアント役の方はこれを ca.crt として保存してください。
+ブラウザの組み込みルートCAに相当します（ca.key は私だけが持っています）。
+
+-----BEGIN CERTIFICATE-----
+&lt;cat の出力をそのまま貼る&gt;
+-----END CERTIFICATE-----</div>
+          </div>
+        </div>
+        <div class="note">
+          <span class="ico">💡</span>
+          <span>
+            観客への解説ポイント：実際のブラウザには数百のルートCA証明書が最初から組み込まれている。
+            今日の <code>ca.crt</code> はそのうちの1つに相当する。
+            これを信頼するということは「このCAが署名した証明書は全部信頼する」ということ。
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 3 ── セッション当日（MC・進行役として）</div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 6</span>
+        <span class="step-name">当日は進行・解説に徹する</span>
+        <span class="actor-tag">🏛️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">
+          当日の CA の仕事は以上で完了している。あとはサーバー役・クライアント役がハンドシェイクを進める。
+          主催者は MC として各ステップの意味を観客に解説する役割に徹する。
+        </div>
+        <div class="note">
+          <span class="ico">🎤</span>
+          <span>
+            <strong>Certificate ステップでの解説例：</strong><br>
+            「サーバーが証明書を送りました。クライアントは今、この証明書が本当に私（CA）の署名を持っているかを <code>openssl verify</code> で確認しています。
+            ブラウザが錠前マークを表示するのはまさにこの検証が通ったときです」
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.body-wrap -->
+
+<script>
+function cp(btn) {
+  const pre = btn.closest('.cmd-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = '✓ ok'; btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('ok'); }, 1800);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TLS Discord Theater — 🖥️ サーバー役マニュアル</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans+JP:wght@300;400;600&display=swap');
+
+:root {
+  --bg:        #f5f2eb;
+  --bg2:       #ede9df;
+  --bg3:       #e4dfd3;
+  --ink:       #1a1714;
+  --ink2:      #4a4540;
+  --ink3:      #8a837a;
+  --rule:      #c8c0b4;
+  --accent:    #1a6640;
+  --accent-bg: #e8f5ee;
+  --accent-bd: #a0d0b0;
+  --both:      #7a3800;
+  --both-bg:   #f8f0e0;
+  --both-bd:   #d8c090;
+  --code-bg:   #1a1714;
+  --code-fg:   #e8e0d4;
+  --code-green:#7ec87e;
+  --code-blue: #7eb8e8;
+  --code-yel:  #d4b87e;
+  --code-dim:  #7a736a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans JP', sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 28px 48px 24px;
+  position: relative; overflow: hidden;
+  border-bottom: 4px solid var(--accent);
+}
+header::after {
+  content: 'SERVER';
+  position: absolute; right: 40px; top: 50%;
+  transform: translateY(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 80px; font-weight: 600;
+  color: rgba(255,255,255,0.04); letter-spacing: -2px;
+  pointer-events: none;
+}
+.hdr-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+  color: #7ec87e; margin-bottom: 8px;
+}
+header h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 20px; font-weight: 500;
+  letter-spacing: -.02em; color: #fff; margin-bottom: 4px;
+}
+.hdr-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: rgba(255,255,255,0.35);
+  margin-bottom: 14px;
+}
+.legend { display: flex; gap: 20px; flex-wrap: wrap; }
+.leg {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: rgba(255,255,255,0.45);
+}
+.leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.leg-dot.you  { background: #7ec87e; }
+.leg-dot.both { background: #d4b87e; }
+.leg-dot.wait { background: #888; }
+.leg-dot.disc { background: #8a8ef8; }
+
+/* ── BODY ── */
+.body-wrap {
+  max-width: 860px; margin: 0 auto;
+  padding: 28px 40px 80px;
+}
+
+/* ── PHASE ── */
+.phase { margin: 28px 0 0; }
+.phase-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink3);
+  border-top: 2px solid var(--ink);
+  padding-top: 7px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 12px;
+}
+.phase-title::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+
+/* ── STEP ── */
+.step {
+  display: grid; grid-template-columns: 175px 1fr;
+  border: 1px solid var(--rule);
+  border-radius: 3px; overflow: hidden; margin-bottom: 8px;
+}
+.step.you-step  { border-left: 3px solid var(--accent); }
+.step.both-step { border-left: 3px solid var(--both); }
+
+.step-meta {
+  padding: 12px 14px; border-right: 1px solid var(--rule);
+  display: flex; flex-direction: column; gap: 5px;
+  background: var(--bg2);
+}
+.step-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em; color: var(--ink3);
+}
+.step-name { font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.actor-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 2px 7px; border-radius: 2px; margin-top: 3px; width: fit-content;
+}
+.actor-tag.you  { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-bd); }
+.actor-tag.both { background: var(--both-bg);   color: var(--both);   border: 1px solid var(--both-bd); }
+
+.step-body {
+  padding: 12px 16px; background: #fff;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.step-desc { font-size: 12px; color: var(--ink2); line-height: 1.65; }
+.step-desc code {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  background: var(--bg2); padding: 1px 5px; border-radius: 2px; color: var(--ink);
+}
+.step-desc strong { color: var(--ink); }
+
+/* ── WAIT ── */
+.wait-block {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg2); border: 1px dashed var(--rule);
+  border-radius: 3px; margin-bottom: 8px;
+}
+.wait-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
+.wait-text { font-size: 12px; color: var(--ink3); line-height: 1.6; }
+.wait-text strong { color: var(--ink2); }
+
+/* ── CODE BLOCK ── */
+.cmd-block { background: var(--code-bg); border-radius: 3px; overflow: hidden; margin-top: 2px; }
+.cmd-block + .cmd-block { margin-top: 6px; }
+.cmd-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 12px;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.cmd-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+.copy-btn {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  color: rgba(255,255,255,0.3); background: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 2px 8px; border-radius: 2px; cursor: pointer; transition: all .15s;
+}
+.copy-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+.copy-btn.ok { color: var(--code-green); border-color: var(--code-green); }
+pre {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; line-height: 1.85;
+  padding: 12px 16px; overflow-x: auto; color: var(--code-fg); white-space: pre;
+}
+.c  { color: var(--code-dim); }
+.k  { color: var(--code-green); }
+.f  { color: var(--code-blue); }
+.v  { color: var(--code-yel); }
+.s  { color: #e8a87e; }
+.o  { color: #a878d8; }
+
+/* ── DISCORD ── */
+.discord-row {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 9px 12px;
+  background: rgba(88,101,242,0.06); border: 1px solid rgba(88,101,242,0.2);
+  border-radius: 3px; font-size: 12px; color: #3d47b8; line-height: 1.6;
+}
+.discord-row .icon { font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+.discord-template {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  background: rgba(88,101,242,0.07);
+  padding: 7px 10px; border-radius: 2px; margin-top: 5px;
+  color: var(--ink2); white-space: pre-wrap;
+}
+
+/* ── NOTE ── */
+.note {
+  display: flex; gap: 8px; padding: 8px 12px;
+  background: #fff8e8; border: 1px solid #e0c870;
+  border-radius: 3px; font-size: 11.5px; color: #6a4a00; line-height: 1.65;
+}
+.note .ico { flex-shrink: 0; }
+
+/* ── SECRET BADGE ── */
+.secret-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 4px 10px; border-radius: 2px;
+  background: rgba(192,64,64,0.08); color: #c04040;
+  border: 1px solid rgba(192,64,64,0.25);
+  margin-bottom: 2px;
+}
+
+@media (max-width: 680px) {
+  header { padding: 20px; }
+  header::after { display: none; }
+  .body-wrap { padding: 20px 14px 60px; }
+  .step { grid-template-columns: 1fr; }
+  .step-meta { border-right: none; border-bottom: 1px solid var(--rule); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-eyebrow">TLS Discord Theater — Command Reference</div>
+  <h1>🖥️ サーバー役マニュアル</h1>
+  <div class="hdr-sub">openssl / python3 / macOS</div>
+  <div class="legend">
+    <span class="leg"><span class="leg-dot you"></span>あなたの操作</span>
+    <span class="leg"><span class="leg-dot both"></span>両者（各自実行）</span>
+    <span class="leg"><span class="leg-dot wait"></span>待機</span>
+    <span class="leg"><span class="leg-dot disc"></span>Discordに投稿</span>
+  </div>
+</header>
+
+<div class="body-wrap">
+
+  <!-- PHASE 0 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 0 ── 事前準備（セッション前）</div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 0-a</span>
+        <span class="step-name">サーバー秘密鍵と CSR を生成する</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="secret-badge">🔒 server.key は絶対に公開しない — これが唯一の秘密</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="k">mkdir</span> tls-demo && <span class="k">cd</span> tls-demo
+
+<span class="c"># サーバー秘密鍵</span>
+<span class="k">openssl</span> <span class="f">genrsa</span> <span class="f">-out</span> server.key 2048
+
+<span class="c"># CSR（証明書署名要求）を作成</span>
+<span class="k">openssl</span> <span class="f">req</span> <span class="f">-new</span> \
+  <span class="f">-key</span> server.key \
+  <span class="f">-out</span> server.csr \
+  <span class="f">-subj</span> <span class="s">"/CN=TLS-Theater-Server"</span>
+
+<span class="c"># CSR の中身を確認</span>
+<span class="k">openssl</span> <span class="f">req</span> <span class="f">-in</span> server.csr <span class="f">-noout</span> <span class="f">-subject</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 0-b</span>
+        <span class="step-name">CSR を CA役（主催者）に送る</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">CSR は秘密情報ではない（秘密鍵は含まれない）。DM やチャンネルで CA役に送って署名してもらう。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="k">cat</span> server.csr</pre>
+        </div>
+        <div class="discord-row">
+          <span class="icon">💬</span>
+          <div>CA役（主催者）に送る
+            <div class="discord-template">CSR です。署名をお願いします。
+
+-----BEGIN CERTIFICATE REQUEST-----
+&lt;cat の出力をそのまま貼る&gt;
+-----END CERTIFICATE REQUEST-----</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wait-block">
+      <span class="wait-icon">⏳</span>
+      <div class="wait-text"><strong>CA役待ち</strong> — 署名済み <code>server.crt</code> が返ってくるまで待つ</div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 0-c</span>
+        <span class="step-name">server.crt を受け取り・保存する</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">CA役から返ってきた <code>-----BEGIN CERTIFICATE-----</code> 〜 <code>-----END CERTIFICATE-----</code> を保存する。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="c"># 署名済み証明書を書き出す（BEGIN〜END ごと）</span>
+<span class="k">cat</span> > server.crt  <span class="c"># 貼り付けて Ctrl+D</span>
+
+<span class="c"># 内容を確認</span>
+<span class="k">openssl</span> <span class="f">x509</span> <span class="f">-in</span> server.crt <span class="f">-noout</span> <span class="f">-subject</span> <span class="f">-issuer</span> <span class="f">-dates</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 1 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 1 ── ClientHello 受信</div>
+
+    <div class="wait-block">
+      <span class="wait-icon">⏳</span>
+      <div class="wait-text"><strong>クライアント待ち</strong> — ClientHello（ClientRandom）が投稿されるのを待つ</div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 1</span>
+        <span class="step-name">ClientRandom を変数に保存</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Discord に投稿された ClientRandom（hex 64文字）を変数に入れておく。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre>CLIENT_RANDOM=<span class="s">"（Discord からコピーした 64文字）"</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 2 ── ServerHello / Certificate / ServerHelloDone 送信</div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 2</span>
+        <span class="step-name">ServerRandom 生成 → ServerHello 投稿</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">乱数を生成し、使う暗号スイートを決めて投稿する。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="k">openssl</span> <span class="f">rand</span> <span class="f">-hex</span> 32</pre>
+        </div>
+        <div class="discord-row">
+          <span class="icon">💬</span>
+          <div>Discordに投稿する
+            <div class="discord-template">ServerHello です。
+選択した暗号スイート: TLS_RSA_WITH_AES_128_CBC_SHA256
+圧縮: null
+ServerRandom: &lt;出力した 64文字の hex&gt;</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 3</span>
+        <span class="step-name">server.crt を Certificate として投稿</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">CA に署名された <code>server.crt</code> をそのまま貼る。クライアントはこれを <code>ca.crt</code> で検証してから公開鍵を取り出す。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="c"># フィンガープリント（改ざん確認用）</span>
+<span class="k">openssl</span> <span class="f">x509</span> <span class="f">-in</span> server.crt <span class="f">-fingerprint</span> <span class="f">-sha256</span> <span class="f">-noout</span>
+
+<span class="c"># 証明書本体</span>
+<span class="k">cat</span> server.crt</pre>
+        </div>
+        <div class="discord-row">
+          <span class="icon">💬</span>
+          <div>Discordに投稿する
+            <div class="discord-template">Certificate です。
+Fingerprint: &lt;SHA256:xx:xx:...&gt;
+
+-----BEGIN CERTIFICATE-----
+&lt;cat の出力をそのまま貼る&gt;
+-----END CERTIFICATE-----</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 4</span>
+        <span class="step-name">ServerHelloDone 投稿</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">コマンドなし。テキストだけ投稿する。</div>
+        <div class="discord-row">
+          <span class="icon">💬</span>
+          <div>Discordに投稿する
+            <div class="discord-template">ServerHelloDone です。あとはお任せします。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 3 ── ClientKeyExchange 受信・PMS 復号</div>
+
+    <div class="wait-block">
+      <span class="wait-icon">⏳</span>
+      <div class="wait-text"><strong>クライアント待ち</strong> — ClientKeyExchange（暗号化PMS）が投稿されるのを待つ</div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 5</span>
+        <span class="step-name">PMS を秘密鍵で復号する</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="secret-badge">🔒 この操作は Discord に投稿しない</div>
+        <div class="step-desc">先頭 2バイトが <code>03 03</code> なら正しい PMS。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="c"># Discord の base64 をデコードして保存</span>
+<span class="k">echo</span> <span class="s">"（base64 をここに貼る）"</span> | <span class="k">base64</span> <span class="f">-d</span> > enc_pms.bin
+
+<span class="c"># server.key で RSA 復号</span>
+<span class="k">openssl</span> <span class="f">pkeyutl</span> <span class="f">-decrypt</span> \
+  <span class="f">-inkey</span> server.key \
+  <span class="f">-in</span>    enc_pms.bin \
+  <span class="f">-out</span>   pms.bin
+
+<span class="c"># 先頭 2バイトが 03 03（TLS 1.2）か確認</span>
+<span class="k">od</span> <span class="f">-An</span> <span class="f">-tx1</span> <span class="f">-N2</span> pms.bin
+<span class="o"># →  03 03</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 4 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 4 ── 鍵導出（手元のみ・Discord には流さない）</div>
+
+    <div class="step both-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 6</span>
+        <span class="step-name">prf.py を作業ディレクトリに置く</span>
+        <span class="actor-tag both">🤝 両者共通</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">配布された <code>prf.py</code> を <code>tls-demo/</code> ディレクトリに置く。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="k">cp</span> ~/Downloads/prf.py .
+<span class="k">ls</span> prf.py  <span class="c"># ← 表示されれば OK</span></pre>
+        </div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">使い方</span></div>
+          <pre><span class="c"># 鍵導出（STEP 7 で使う）</span>
+<span class="k">python3</span> prf.py <span class="v">&lt;pms_hex&gt;</span> <span class="v">&lt;client_random&gt;</span> <span class="v">&lt;server_random&gt;</span>
+
+<span class="c"># Finished verify_data 生成（STEP 9 で使う）</span>
+<span class="k">python3</span> prf.py finished <span class="v">&lt;master_secret&gt;</span> <span class="v">&lt;hs_hash&gt;</span> server</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 7</span>
+        <span class="step-name">セッション鍵を導出する</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="secret-badge">🔒 出力は絶対に Discord に貼らない</div>
+        <div class="step-desc">クライアントと同じ計算式で、独立して同じ鍵が出る。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="c"># PMS を hex 文字列に変換</span>
+PMS_HEX=$(<span class="k">od</span> <span class="f">-An</span> <span class="f">-tx1</span> pms.bin | <span class="k">tr</span> <span class="f">-d</span> <span class="s">' \n'</span>)
+
+SERVER_RANDOM=<span class="s">"（STEP 2 で生成した 64文字）"</span>
+CLIENT_RANDOM=<span class="s">"（STEP 1 で保存した 64文字）"</span>
+
+<span class="k">python3</span> prf.py <span class="v">$PMS_HEX</span> <span class="v">$CLIENT_RANDOM</span> <span class="v">$SERVER_RANDOM</span></pre>
+        </div>
+        <div class="note">
+          <span class="ico">🔑</span>
+          <span>出力の <code>server_write_key</code> / <code>server_write_iv</code> / <code>client_write_key</code> / <code>client_write_iv</code> / <code>client_write_MAC</code> / <code>master_secret</code> を手元に控えておく。</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 5 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 5 ── ChangeCipherSpec &amp; Finished</div>
+
+    <div class="wait-block">
+      <span class="wait-icon">⏳</span>
+      <div class="wait-text"><strong>クライアント待ち</strong> — Client Finished（暗号文）が投稿されるのを待つ</div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 8</span>
+        <span class="step-name">Client Finished を検証する</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">クライアントと<strong>同じ Discord ログ</strong>をハッシュ化し、期待値を計算してから復号・照合する。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre><span class="c"># クライアントと同じ範囲の Discord ログを貼り付ける</span>
+<span class="k">cat</span> > hs_log.txt  <span class="c"># 貼り付けて Ctrl+D</span>
+
+HS_HASH=$(<span class="k">openssl</span> <span class="f">dgst</span> <span class="f">-sha256</span> <span class="f">-hex</span> hs_log.txt | <span class="k">cut</span> <span class="f">-d' '</span> <span class="f">-f2</span>)
+MS_HEX=<span class="s">"（master_secret の値）"</span>
+CW_KEY=<span class="s">"（client_write_key の値）"</span>
+CW_IV=<span class="s">"（client_write_iv の値）"</span>
+
+<span class="c"># 期待値を計算</span>
+EXPECTED=$(<span class="k">python3</span> prf.py finished <span class="v">$MS_HEX</span> <span class="v">$HS_HASH</span> client)
+
+<span class="c"># クライアントの Finished を復号して照合</span>
+RECEIVED=$(<span class="k">echo</span> <span class="s">"（クライアントの base64）"</span> | <span class="k">base64</span> <span class="f">-d</span> | \
+  <span class="k">openssl</span> <span class="f">enc</span> <span class="f">-d</span> <span class="f">-aes-128-cbc</span> \
+  <span class="f">-K</span> <span class="v">$CW_KEY</span> <span class="f">-iv</span> <span class="v">$CW_IV</span> <span class="f">-nosalt</span> | \
+  <span class="k">python3</span> <span class="f">-c</span> <span class="s">"import sys; print(sys.stdin.buffer.read().hex())"</span>)
+
+[ <span class="s">"$RECEIVED"</span> = <span class="s">"$EXPECTED"</span> ] \
+  && <span class="k">echo</span> <span class="s">"✓ Finished 検証 OK"</span> \
+  || <span class="k">echo</span> <span class="s">"✗ 不一致 — ログの貼り付け範囲を確認"</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 9</span>
+        <span class="step-name">Server Finished を送る</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">同じ <code>hs_log.txt</code> を使って server 側の verify_data を作り、<code>server_write_key</code> で暗号化して投稿する。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre>SW_KEY=<span class="s">"（server_write_key の値）"</span>
+SW_IV=<span class="s">"（server_write_iv の値）"</span>
+
+<span class="c"># verify_data = PRF(MS, "server finished", HS_HASH)[12B] → 暗号化</span>
+<span class="k">python3</span> prf.py finished <span class="v">$MS_HEX</span> <span class="v">$HS_HASH</span> server | \
+  <span class="k">python3</span> <span class="f">-c</span> <span class="s">"import sys; sys.stdout.buffer.write(bytes.fromhex(input()))"</span> | \
+  <span class="k">openssl</span> <span class="f">enc</span> <span class="f">-aes-128-cbc</span> \
+  <span class="f">-K</span> <span class="v">$SW_KEY</span> <span class="f">-iv</span> <span class="v">$SW_IV</span> <span class="f">-nosalt</span> | \
+  <span class="k">base64</span> <span class="f">-b 0</span></pre>
+        </div>
+        <div class="note">
+          <span class="ico">⚠️</span>
+          <span>STEP 8 で作った <code>hs_log.txt</code> と <code>HS_HASH</code> をそのまま使う。<code>cat</code> し直す必要はない。</span>
+        </div>
+        <div class="discord-row">
+          <span class="icon">💬</span>
+          <div>Discordに投稿する
+            <div class="discord-template">ChangeCipherSpec です。
+Finished（暗号文）:
+&lt;base64 の出力をそのまま貼る&gt;
+
+ハンドシェイク完了です 🎉</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 6 -->
+  <div class="phase">
+    <div class="phase-title">PHASE 6 ── Application Data 受信・復号</div>
+
+    <div class="wait-block">
+      <span class="wait-icon">⏳</span>
+      <div class="wait-text"><strong>クライアント待ち</strong> — 暗号化メッセージが投稿されるのを待つ</div>
+    </div>
+
+    <div class="step you-step">
+      <div class="step-meta">
+        <span class="step-num">STEP 10</span>
+        <span class="step-name">復号 → MAC 検証 → 結果投稿</span>
+        <span class="actor-tag you">🖥️ あなた</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">AES 復号後、末尾 32バイトが HMAC なので切り離して再計算し、一致を確認する。</div>
+        <div class="cmd-block">
+          <div class="cmd-bar"><span class="cmd-label">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+          <pre>CW_MAC=<span class="s">"（client_write_MAC の値）"</span>
+
+<span class="c"># AES 復号</span>
+<span class="k">echo</span> <span class="s">"（base64）"</span> | <span class="k">base64</span> <span class="f">-d</span> | \
+  <span class="k">openssl</span> <span class="f">enc</span> <span class="f">-d</span> <span class="f">-aes-128-cbc</span> \
+  <span class="f">-K</span> <span class="v">$CW_KEY</span> <span class="f">-iv</span> <span class="v">$CW_IV</span> <span class="f">-nosalt</span> > dec.bin
+
+<span class="c"># 末尾 32バイトが MAC、残りが平文</span>
+TOTAL=$(<span class="k">wc</span> <span class="f">-c</span> < dec.bin)
+MLEN=$(( TOTAL - 32 ))
+<span class="k">dd</span> <span class="f">if</span>=dec.bin <span class="f">bs</span>=1 <span class="f">count</span>=<span class="v">$MLEN</span>  <span class="f">of</span>=msg.bin  2>/dev/null
+<span class="k">dd</span> <span class="f">if</span>=dec.bin <span class="f">bs</span>=1 <span class="f">skip</span>=<span class="v">$MLEN</span>   <span class="f">of</span>=rmac.bin 2>/dev/null
+
+<span class="c"># 平文を表示</span>
+<span class="k">cat</span> msg.bin
+
+<span class="c"># MAC を再計算して検証</span>
+<span class="k">printf</span> <span class="s">'\x00\x00\x00\x00\x00\x00\x00\x00'</span> > seq.bin
+RECV=$(<span class="k">od</span> <span class="f">-An</span> <span class="f">-tx1</span> rmac.bin | <span class="k">tr</span> <span class="f">-d</span> <span class="s">' \n'</span>)
+CALC=$(<span class="k">cat</span> seq.bin msg.bin | \
+  <span class="k">openssl</span> <span class="f">dgst</span> <span class="f">-sha256</span> <span class="f">-mac</span> HMAC \
+  <span class="f">-macopt</span> <span class="s">"hexkey:$CW_MAC"</span> <span class="f">-hex</span> | <span class="k">cut</span> <span class="f">-d' '</span> <span class="f">-f2</span>)
+[ <span class="s">"$RECV"</span> = <span class="s">"$CALC"</span> ] && <span class="k">echo</span> <span class="s">"✓ MAC OK"</span> || <span class="k">echo</span> <span class="s">"✗ 改ざん検知"</span></pre>
+        </div>
+        <div class="discord-row">
+          <span class="icon">💬</span>
+          <div>Discordに投稿する
+            <div class="discord-template">復号できました 🎉
+MAC検証: ✓（改ざんなし）
+メッセージ:「&lt;cat の出力&gt;」
+
+全パケット傍受されてましたよね？
+でも server.key なしには無理でしたよね 😏</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.body-wrap -->
+
+<script>
+function cp(btn) {
+  const pre = btn.closest('.cmd-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = '✓ ok'; btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('ok'); }, 1800);
+  });
+}
+</script>
+</body>
+</html>

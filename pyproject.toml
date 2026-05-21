@@ -1,0 +1,11 @@
+[project]
+name = "tls-handson"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ipywidgets>=8.1.8",
+    "jupyterlab>=4.5.7",
+    "matplotlib>=3.10.9",
+]
