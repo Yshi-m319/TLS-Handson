@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TLS Theater — Observer Console</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Syne:wght@400;700;800&display=swap');
+
+:root {
+  --bg:     #080b10;
+  --bg2:    #0c1018;
+  --bg3:    #101520;
+  --panel:  #0a0f18;
+  --border: #1a2535;
+  --b2:     #243040;
+  --green:  #00e87a;
+  --gdim:   #00994d;
+  --gdark:  #00290f;
+  --blue:   #38b6ff;
+  --bdim:   #1e6e99;
+  --yellow: #f5c842;
+  --red:    #ff4d6a;
+  --purple: #b06dff;
+  --orange: #ff8c42;
+  --dim:    #3a5060;
+  --text:   #8aabb8;
+  --bright: #c8dce8;
+  --white:  #e8f4f8;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* scanline overlay */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg,
+    transparent, transparent 2px,
+    rgba(0,232,122,.012) 2px, rgba(0,232,122,.012) 4px);
+  pointer-events:none; z-index:0;
+}
+
+/* ═══ HEADER ═══════════════════════════════════════════════════ */
+header {
+  position: relative; z-index:1;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg,rgba(0,232,122,.05) 0%,transparent 100%);
+  padding: 28px 48px;
+  display: flex; align-items: flex-start; gap: 32px;
+}
+.hdr-left { flex:1; }
+.hdr-badge {
+  display: inline-flex; align-items:center; gap:8px;
+  font-size:10px; letter-spacing:.15em; text-transform:uppercase;
+  color: var(--green); background: var(--gdark);
+  border: 1px solid rgba(0,232,122,.3);
+  padding:3px 10px; border-radius:2px; margin-bottom:14px;
+}
+.hdr-badge::before { content:'●'; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.15;} }
+
+h1 {
+  font-family:'Syne',sans-serif;
+  font-size:26px; font-weight:800;
+  color:var(--white); letter-spacing:-.02em;
+  line-height:1.15; margin-bottom:6px;
+}
+h1 em { color:var(--green); font-style:normal; }
+
+.hdr-sub { font-size:12px; color:var(--dim); letter-spacing:.02em; }
+.hdr-roles {
+  display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;
+}
+.role-tag {
+  font-size:10px; padding:3px 10px; border-radius:2px;
+  border:1px solid; letter-spacing:.08em;
+}
+.role-tag.client { color:var(--blue);   border-color:rgba(56,182,255,.4); background:rgba(56,182,255,.06); }
+.role-tag.server { color:var(--green);  border-color:rgba(0,232,122,.4);  background:rgba(0,232,122,.06); }
+.role-tag.obs    { color:var(--yellow); border-color:rgba(245,200,66,.4); background:rgba(245,200,66,.06); }
+
+/* ═══ LAYOUT ════════════════════════════════════════════════════ */
+.layout {
+  position:relative; z-index:1;
+  display:grid;
+  grid-template-columns: 1fr 420px;
+  gap:0;
+  min-height:calc(100vh - 120px);
+}
+
+/* ═══ LEFT: HACKING CHALLENGE ══════════════════════════════════ */
+.challenge-pane {
+  border-right:1px solid var(--border);
+  padding:32px 40px;
+}
+
+.section-label {
+  font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--dim); margin-bottom:20px;
+  display:flex; align-items:center; gap:10px;
+}
+.section-label::after {
+  content:''; flex:1; height:1px;
+  background:linear-gradient(90deg,var(--b2),transparent);
+}
+
+h2 {
+  font-family:'Syne',sans-serif; font-size:20px; font-weight:700;
+  color:var(--bright); margin-bottom:6px;
+}
+.challenge-desc {
+  font-size:12px; color:var(--dim); margin-bottom:28px;
+  border-left:2px solid var(--b2); padding-left:12px;
+}
+.challenge-desc strong { color:var(--yellow); }
+
+/* inputs */
+.field { margin-bottom:14px; }
+.field label {
+  display:block; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--dim); margin-bottom:5px;
+}
+.field input, .field textarea {
+  width:100%; background:var(--bg2); border:1px solid var(--border);
+  color:var(--bright); font-family:'JetBrains Mono',monospace;
+  font-size:11px; padding:9px 12px; border-radius:2px;
+  outline:none; resize:vertical; transition: border-color .15s;
+}
+.field input:focus, .field textarea:focus {
+  border-color:var(--blue);
+}
+.field textarea { height:60px; }
+
+.btn-primary {
+  width:100%; padding:12px;
+  background:var(--green); color:#000;
+  border:none; font-family:'JetBrains Mono',monospace;
+  font-size:12px; font-weight:700; letter-spacing:.08em;
+  cursor:pointer; border-radius:2px;
+  transition: all .15s; margin:16px 0;
+}
+.btn-primary:hover { background:#00ff8c; box-shadow:0 0 20px rgba(0,232,122,.4); }
+.btn-primary:disabled { background:var(--b2); color:var(--dim); cursor:not-allowed; }
+
+/* ── 結果ステップ ────────────────────────────────────────────── */
+#results { display:none; }
+#results.visible { display:block; }
+
+.chain {
+  margin:20px 0;
+  border:1px solid var(--border);
+  border-radius:3px; overflow:hidden;
+}
+.chain-title {
+  padding:8px 14px;
+  background:var(--bg3);
+  border-bottom:1px solid var(--border);
+  font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--dim);
+}
+
+.chain-step {
+  display:flex; gap:12px; align-items:flex-start;
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  opacity:0; transform:translateY(6px);
+  transition: opacity .35s, transform .35s;
+}
+.chain-step:last-child { border-bottom:none; }
+.chain-step.show { opacity:1; transform:none; }
+
+.step-icon {
+  width:24px; height:24px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; flex-shrink:0; margin-top:1px;
+}
+.step-icon.ok  { background:rgba(0,232,122,.15); color:var(--green); border:1px solid rgba(0,232,122,.3); }
+.step-icon.fail{ background:rgba(255,77,106,.1);  color:var(--red);   border:1px solid rgba(255,77,106,.3); }
+.step-icon.skip{ background:rgba(58,80,96,.2);    color:var(--dim);   border:1px solid var(--border); }
+.step-icon.wait{ background:rgba(245,200,66,.1);  color:var(--yellow);border:1px solid rgba(245,200,66,.3); }
+
+.step-content { flex:1; }
+.step-name { color:var(--bright); font-size:12px; margin-bottom:3px; }
+.step-detail { font-size:11px; color:var(--dim); }
+.step-detail.ok  { color:var(--green); }
+.step-detail.fail{ color:var(--red); }
+.step-detail.code {
+  color:var(--yellow); background:rgba(245,200,66,.07);
+  padding:6px 10px; border-radius:2px; margin-top:6px;
+  word-break:break-all; font-size:10px;
+}
+
+/* ── 壁の強調表示 ─────────────────────────────────────────────── */
+.wall {
+  margin:20px 0;
+  background:rgba(255,77,106,.05);
+  border:1px solid rgba(255,77,106,.3);
+  border-radius:3px; padding:16px 20px;
+}
+.wall-title {
+  font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--red); margin-bottom:8px;
+}
+.wall-body { font-size:12px; color:var(--text); line-height:1.9; }
+.wall-body code {
+  color:var(--yellow); background:rgba(245,200,66,.08);
+  padding:1px 5px; border-radius:2px;
+}
+
+/* ── 検証モード ──────────────────────────────────────────────── */
+details.verify-mode {
+  margin-top:24px;
+  border:1px solid var(--b2); border-radius:3px; overflow:hidden;
+}
+details.verify-mode summary {
+  padding:10px 14px; cursor:pointer;
+  font-size:11px; color:var(--purple);
+  background:var(--bg3); border-bottom:1px solid transparent;
+  list-style:none; display:flex; align-items:center; gap:8px;
+}
+details.verify-mode[open] summary { border-bottom-color:var(--b2); }
+details.verify-mode summary::-webkit-details-marker { display:none; }
+details.verify-mode summary::before {
+  content:'▶'; font-size:9px; transition:transform .15s;
+}
+details.verify-mode[open] summary::before { transform:rotate(90deg); }
+.verify-body { padding:16px; }
+.btn-secondary {
+  padding:8px 16px;
+  background:rgba(176,109,255,.12); color:var(--purple);
+  border:1px solid rgba(176,109,255,.4);
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  cursor:pointer; border-radius:2px; transition:all .15s;
+  margin-top:10px;
+}
+.btn-secondary:hover { background:rgba(176,109,255,.2); }
+
+#verify-result {
+  margin-top:14px; font-size:12px;
+  display:none;
+}
+#verify-result.visible { display:block; }
+
+.success-banner {
+  background:rgba(0,232,122,.07);
+  border:1px solid rgba(0,232,122,.3);
+  border-radius:3px; padding:14px 18px;
+  color:var(--green);
+}
+.success-banner .msg-content {
+  font-size:16px; font-weight:700;
+  font-family:'Syne',sans-serif;
+  color:var(--white); margin-top:6px;
+  padding:10px; background:var(--bg2); border-radius:2px;
+  word-break:break-all;
+}
+
+/* ═══ RIGHT: PACKET FEED + MC SCRIPT ═══════════════════════════ */
+.side-pane {
+  display:flex; flex-direction:column;
+}
+
+.side-tab-bar {
+  display:flex; border-bottom:1px solid var(--border);
+}
+.side-tab {
+  flex:1; padding:12px 16px; font-size:11px; letter-spacing:.06em;
+  color:var(--dim); background:none; border:none; cursor:pointer;
+  border-bottom:2px solid transparent; transition:all .15s;
+}
+.side-tab.active { color:var(--green); border-bottom-color:var(--green); }
+
+.side-content { flex:1; overflow-y:auto; padding:24px 20px; }
+.side-section { display:none; }
+.side-section.active { display:block; }
+
+/* ── パケット一覧 ─────────────────────────────────────────────── */
+.packet-list { display:flex; flex-direction:column; gap:2px; }
+.pkt {
+  border-radius:3px; border:1px solid var(--border);
+  overflow:hidden;
+}
+.pkt-header {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; background:var(--bg3); border-bottom:1px solid var(--border);
+}
+.pkt-who {
+  font-size:9px; font-weight:700; letter-spacing:.1em; padding:2px 7px;
+  border-radius:2px; white-space:nowrap;
+}
+.pkt-who.c { background:rgba(56,182,255,.2); color:var(--blue); }
+.pkt-who.s { background:rgba(0,232,122,.15); color:var(--green); }
+.pkt-name { font-size:11px; color:var(--bright); flex:1; }
+.pkt-lock { font-size:14px; }
+
+.pkt-body { padding:10px 12px; }
+.pkt-why { font-size:11px; color:var(--dim); margin-bottom:4px; }
+.pkt-crack {
+  font-size:10px; padding:5px 9px; border-radius:2px; margin-top:6px;
+  display:inline-block;
+}
+.pkt-crack.no  { background:rgba(255,77,106,.1); color:var(--red);   border:1px solid rgba(255,77,106,.2); }
+.pkt-crack.yes { background:rgba(0,232,122,.1);  color:var(--green); border:1px solid rgba(0,232,122,.2); }
+.pkt-crack.wall{ background:rgba(245,200,66,.1); color:var(--yellow);border:1px solid rgba(245,200,66,.2); }
+
+/* ── MC台本 ──────────────────────────────────────────────────── */
+.mc-list { display:flex; flex-direction:column; gap:12px; }
+.mc-card {
+  border:1px solid var(--border); border-radius:3px; overflow:hidden;
+}
+.mc-trigger {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; background:var(--bg3); border-bottom:1px solid var(--border);
+  font-size:10px; color:var(--dim); letter-spacing:.06em;
+}
+.mc-trigger .num {
+  background:var(--b2); color:var(--bright);
+  padding:2px 7px; border-radius:2px; font-size:10px;
+}
+.mc-script {
+  padding:12px;
+  font-size:12px; color:var(--text); line-height:1.9;
+  font-style:italic;
+}
+.mc-script strong { color:var(--bright); font-style:normal; }
+.mc-question {
+  margin-top:8px; padding:8px 10px;
+  background:rgba(245,200,66,.06);
+  border:1px solid rgba(245,200,66,.2);
+  border-radius:2px; font-size:11px;
+  color:var(--yellow); font-style:normal;
+}
+
+/* ── タイムライン流れ図 ────────────────────────────────────────── */
+.timeline { display:flex; flex-direction:column; gap:0; margin-bottom:16px; }
+.tl-row {
+  display:grid; grid-template-columns:90px 1fr 90px;
+  align-items:center; gap:4px; min-height:32px;
+}
+.tl-client { font-size:10px; color:var(--blue); text-align:left; }
+.tl-server { font-size:10px; color:var(--green); text-align:right; }
+.tl-mid { text-align:center; font-size:10px; color:var(--dim); }
+.arrow-r { color:var(--blue);  font-size:11px; }
+.arrow-l { color:var(--green); font-size:11px; }
+.tl-divider { grid-column:1/-1; height:1px; background:var(--border); margin:4px 0; }
+
+/* ── スクロールバー ───────────────────────────────────────────── */
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--b2); border-radius:2px; }
+
+@media (max-width:900px) {
+  .layout { grid-template-columns:1fr; }
+  .challenge-pane { border-right:none; border-bottom:1px solid var(--border); }
+  header { padding:20px; }
+  .challenge-pane { padding:24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-left">
+    <div class="hdr-badge">LIVE INTERCEPTION</div>
+    <h1>TLS Theater<br><em>Observer Console</em></h1>
+    <div class="hdr-sub">あなたはすべてのパケットを傍受しています。さあ、復号できますか？</div>
+    <div class="hdr-roles">
+      <span class="role-tag client">💻 CLIENT</span>
+      <span class="role-tag server">🖥️ SERVER</span>
+      <span class="role-tag obs">👁 YOU: OBSERVER</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ═══ LEFT: HACKING CHALLENGE ════════════════════════════ -->
+  <div class="challenge-pane">
+    <div class="section-label">盗聴チャレンジ</div>
+    <h2>傍受データで復号を試みる</h2>
+    <p class="challenge-desc">
+      Discordチャンネルのすべてのパケットをコピペしてください。<br>
+      <strong>あなたは全情報を持っています。</strong>それで復号できるか試してみましょう。
+    </p>
+
+    <div class="field">
+      <label>ClientRandom（hex 64文字）</label>
+      <input type="text" id="cr" placeholder="a3f9c2e1..." autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>ServerRandom（hex 64文字）</label>
+      <input type="text" id="sr" placeholder="7b1e4d8a..." autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>暗号化PMS / ClientKeyExchange（base64）</label>
+      <textarea id="epms" placeholder="gX9zK2m4P..." spellcheck="false"></textarea>
+    </div>
+    <div class="field">
+      <label>暗号文 / Application Data（base64）</label>
+      <textarea id="ct" placeholder="Yw3nP+k0..." spellcheck="false"></textarea>
+    </div>
+
+    <button class="btn-primary" id="hack-btn" onclick="runChallenge()">
+      🔓 盗聴チャレンジ開始
+    </button>
+
+    <!-- ── 結果 ────────────────────────────────────────────── -->
+    <div id="results">
+      <div class="chain">
+        <div class="chain-title">攻撃チェーン — ステップごとに試みる</div>
+        <div class="chain-step" id="s1">
+          <div class="step-icon" id="s1-ico">⋯</div>
+          <div class="step-content">
+            <div class="step-name">Step 1: Pre-Master Secret の取得</div>
+            <div class="step-detail" id="s1-d">EncryptedPMS を server.key で復号する</div>
+          </div>
+        </div>
+        <div class="chain-step" id="s2">
+          <div class="step-icon skip" id="s2-ico">—</div>
+          <div class="step-content">
+            <div class="step-name">Step 2: Master Secret の計算</div>
+            <div class="step-detail" id="s2-d">PRF(PMS, "master secret", C_rand ‖ S_rand)[48B]</div>
+          </div>
+        </div>
+        <div class="chain-step" id="s3">
+          <div class="step-icon skip" id="s3-ico">—</div>
+          <div class="step-content">
+            <div class="step-name">Step 3: Session Keys の展開</div>
+            <div class="step-detail" id="s3-d">PRF(MS, "key expansion", S_rand ‖ C_rand)[128B]</div>
+          </div>
+        </div>
+        <div class="chain-step" id="s4">
+          <div class="step-icon skip" id="s4-ico">—</div>
+          <div class="step-content">
+            <div class="step-name">Step 4: AES-128-CBC 復号 + MAC 検証</div>
+            <div class="step-detail" id="s4-d">client_write_key / IV で復号する</div>
+          </div>
+        </div>
+      </div><!-- /chain -->
+
+      <div class="wall" id="wall-block">
+        <div class="wall-title">⛔ 突破不可能な壁</div>
+        <div class="wall-body" id="wall-msg">
+          <code>EncryptedPMS</code> の復号には <code>server.key</code>（サーバー秘密鍵）が必要です。<br><br>
+          RSA 2048bit ＝ 2<sup>2048</sup> 通りの試行。宇宙の年齢 × 地球上のコンピュータ全台で
+          総当たりしても絶対に間に合いません。<br><br>
+          これが TLS の「<strong style="color:var(--yellow)">秘密鍵を持つ者だけが復号できる</strong>」仕組みです。
+        </div>
+      </div>
+    </div><!-- /results -->
+
+    <!-- ── 検証モード（サーバー役用） ───────────────────────── -->
+    <details class="verify-mode">
+      <summary>🔑 検証モード — PMS を入力して全経路を確認する</summary>
+      <div class="verify-body">
+        <p style="font-size:11px; color:var(--dim); margin-bottom:12px;">
+          サーバー役が <code style="color:var(--yellow)">tls-theater-server/session_keys.txt</code> の
+          <code style="color:var(--yellow)">MS=...</code> の値を確認できます。<br>
+          PMS（Pre-Master Secret の hex 96文字）を入力すると実際に全鍵を導出して復号します。
+        </p>
+        <div class="field">
+          <label>PMS hex（96文字 / 48バイト）</label>
+          <input type="text" id="pms-input" placeholder="0303..." spellcheck="false">
+        </div>
+        <button class="btn-secondary" onclick="runVerify()">
+          🔐 鍵導出 → 復号 → MAC検証
+        </button>
+        <div id="verify-result"></div>
+      </div>
+    </details>
+
+  </div><!-- /challenge-pane -->
+
+  <!-- ═══ RIGHT: TABS ═════════════════════════════════════════ -->
+  <div class="side-pane">
+    <div class="side-tab-bar">
+      <button class="side-tab active" onclick="switchTab('packets',this)">📡 パケット解説</button>
+      <button class="side-tab" onclick="switchTab('mc',this)">🎤 MC台本</button>
+    </div>
+
+    <!-- ── パケット解説 ─────────────────────────────────────── -->
+    <div class="side-content">
+    <div class="side-section active" id="tab-packets">
+
+      <div class="section-label" style="margin-bottom:16px;">ハンドシェイク フロー</div>
+      <div class="timeline">
+        <div class="tl-row">
+          <div class="tl-client" style="font-weight:700; font-size:11px;">💻 CLIENT</div>
+          <div class="tl-mid"></div>
+          <div class="tl-server" style="font-weight:700; font-size:11px;">SERVER 🖥️</div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-client">① 乱数生成</div>
+          <div class="tl-mid"><span class="arrow-r">──── ClientHello ────▶</span></div>
+          <div class="tl-server"></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-client"></div>
+          <div class="tl-mid"><span class="arrow-l">◀── Certificate ────</span></div>
+          <div class="tl-server">② 証明書送付</div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-client"></div>
+          <div class="tl-mid"><span class="arrow-l">◀── ServerRandom ───</span></div>
+          <div class="tl-server">③ 乱数生成</div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-client">④ PMS生成・暗号化</div>
+          <div class="tl-mid"><span class="arrow-r">── ClientKeyExch ───▶</span></div>
+          <div class="tl-server"></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-client" style="color:var(--yellow);">⑤ 鍵導出</div>
+          <div class="tl-mid" style="color:var(--yellow); font-size:10px;">── 各自で同じ計算 ──</div>
+          <div class="tl-server" style="color:var(--yellow);">⑤ 鍵導出</div>
+        </div>
+        <div class="tl-row"><div class="tl-divider"></div></div>
+        <div class="tl-row">
+          <div class="tl-client">⑥ 暗号化送信</div>
+          <div class="tl-mid"><span class="arrow-r">──── 暗号文 ─────────▶</span></div>
+          <div class="tl-server">⑦ 復号</div>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin:20px 0 14px;">各パケットの意味</div>
+      <div class="packet-list">
+
+        <div class="pkt">
+          <div class="pkt-header">
+            <span class="pkt-who s">SERVER</span>
+            <span class="pkt-name">Certificate + 公開鍵</span>
+            <span class="pkt-lock">🌐</span>
+          </div>
+          <div class="pkt-body">
+            <div class="pkt-why">RSA公開鍵。誰でも暗号化に使えます。</div>
+            <span class="pkt-crack yes">✓ 傍受しても問題なし（公開情報）</span>
+          </div>
+        </div>
+
+        <div class="pkt">
+          <div class="pkt-header">
+            <span class="pkt-who c">CLIENT</span>
+            <span class="pkt-name">ClientRandom</span>
+            <span class="pkt-lock">🎲</span>
+          </div>
+          <div class="pkt-body">
+            <div class="pkt-why">32バイトの乱数。単体では何の意味もない。</div>
+            <span class="pkt-crack yes">✓ 傍受しても問題なし（単体では無意味）</span>
+          </div>
+        </div>
+
+        <div class="pkt">
+          <div class="pkt-header">
+            <span class="pkt-who s">SERVER</span>
+            <span class="pkt-name">ServerRandom</span>
+            <span class="pkt-lock">🎲</span>
+          </div>
+          <div class="pkt-body">
+            <div class="pkt-why">32バイトの乱数。単体では何の意味もない。<br>
+            ClientRandom と合わせても PMS がないと鍵が作れない。</div>
+            <span class="pkt-crack yes">✓ 傍受しても問題なし（単体では無意味）</span>
+          </div>
+        </div>
+
+        <div class="pkt">
+          <div class="pkt-header">
+            <span class="pkt-who c">CLIENT</span>
+            <span class="pkt-name">ClientKeyExchange（EncryptedPMS）</span>
+            <span class="pkt-lock">🔒</span>
+          </div>
+          <div class="pkt-body">
+            <div class="pkt-why">PMS をサーバー公開鍵で RSA暗号化した 256バイト。<br>
+            <strong>ここが全体の"壁"</strong>。server.key なしに復号不可能。</div>
+            <span class="pkt-crack wall">⛔ ここで詰む — RSA 2048bit を破るのは不可能</span>
+          </div>
+        </div>
+
+        <div class="pkt">
+          <div class="pkt-header">
+            <span class="pkt-who c">CLIENT</span>
+            <span class="pkt-name">Application Data（暗号文）</span>
+            <span class="pkt-lock">🔒</span>
+          </div>
+          <div class="pkt-body">
+            <div class="pkt-why">AES-128-CBC + HMAC-SHA256 で暗号化。<br>
+            セッション鍵を持つ者だけ復号できる。</div>
+            <span class="pkt-crack no">✗ セッション鍵なしに復号不可能</span>
+          </div>
+        </div>
+
+      </div><!-- /packet-list -->
+    </div><!-- /tab-packets -->
+
+    <!-- ── MC台本 ────────────────────────────────────────────── -->
+    <div class="side-section" id="tab-mc">
+
+      <div class="section-label" style="margin-bottom:16px;">進行台本</div>
+      <p style="font-size:11px; color:var(--dim); margin-bottom:20px; padding-left:12px; border-left:2px solid var(--b2);">
+        MCはDiscordの投稿を見ながら、各パケットが届いたタイミングで以下を読み上げてください。
+        観客には observer.html を開いてもらうと良いです。
+      </p>
+
+      <div class="mc-list">
+
+        <div class="mc-card">
+          <div class="mc-trigger">
+            <span class="num">🖥️ Step 1</span>
+            サーバーが公開鍵を投稿したら
+          </div>
+          <div class="mc-script">
+            「サーバーが公開鍵を公開しました。みなさんコピーできますよね？<br>
+            この鍵で暗号化すること自体は誰でもできます。<br>
+            <strong>でも——復号できるのは、対応する秘密鍵を持つサーバーだけです。</strong>」
+          </div>
+          <div class="mc-question">
+            💬 問: この公開鍵を手に入れた攻撃者は何ができる？何ができない？
+          </div>
+        </div>
+
+        <div class="mc-card">
+          <div class="mc-trigger">
+            <span class="num">💻 Step 2</span>
+            クライアントが ClientRandom を投稿したら
+          </div>
+          <div class="mc-script">
+            「ただの乱数ですね。これだけで何かできる人はいますか？<br>
+            なぜこんなものを送るんでしょう。<br>
+            <strong>実は後で鍵を作るための"塩"として使います。同じ秘密から毎回違う鍵を作るために。</strong>」
+          </div>
+        </div>
+
+        <div class="mc-card">
+          <div class="mc-trigger">
+            <span class="num">🖥️ Step 3</span>
+            サーバーが ServerRandom を投稿したら
+          </div>
+          <div class="mc-script">
+            「もう一つ乱数が来ました。これで2つ揃いました。<br>
+            でも——<strong>この2つの乱数と公開鍵を全部持っていても、まだ通信は解読できません。</strong><br>
+            次のパケットが核心です。」
+          </div>
+        </div>
+
+        <div class="mc-card">
+          <div class="mc-trigger">
+            <span class="num">💻 Step 4</span>
+            クライアントが暗号化PMSを投稿したら ← 最重要！
+          </div>
+          <div class="mc-script">
+            「さあ来ました！これが <strong>ClientKeyExchange</strong>。<br>
+            クライアントがこっそり作った48バイトの秘密（Pre-Master Secret）を、<br>
+            サーバーの公開鍵で暗号化したものです。<br><br>
+            <strong>みなさんはこれを見ています。でも中身は？</strong><br>
+            RSA 2048bit を解読するには宇宙の年齢より長い時間がかかります。<br>
+            これが"壁"です。ここで外部の傍受者は詰みます。」
+          </div>
+          <div class="mc-question">
+            💬 問: 今この時点で、通信の安全性はどこに依存している？（答: server.key の秘密性）
+          </div>
+        </div>
+
+        <div class="mc-card">
+          <div class="mc-trigger">
+            <span class="num">⚡ 静寂</span>
+            両者が鍵を計算している間（投稿なし）
+          </div>
+          <div class="mc-script">
+            「今、サーバーは秘密鍵で PMS を復号し、<br>
+            クライアントと全く同じ計算で Master Secret を導出しています。<br>
+            <strong>二人は一度も「鍵」を送り合っていないのに、今この瞬間、同じ鍵を持ちました。</strong><br>
+            これが公開鍵暗号の本質的な魔法です。」
+          </div>
+        </div>
+
+        <div class="mc-card">
+          <div class="mc-trigger">
+            <span class="num">💻 Step 5</span>
+            クライアントが暗号文を投稿したら
+          </div>
+          <div class="mc-script">
+            「これが実際のメッセージです。全員が見えています。<br>
+            observer.htmlを開いた方——チャレンジを試してみてください。<br>
+            <strong>全パケットをコピペして「盗聴チャレンジ開始」を押してみてください。</strong>」
+          </div>
+        </div>
+
+        <div class="mc-card">
+          <div class="mc-trigger">
+            <span class="num">🎉 Fin</span>
+            サーバーが復号成功を投稿したら
+          </div>
+          <div class="mc-script">
+            「復号できました！<br>
+            みなさん全部のパケットを見ていたのに解読できませんでしたよね？<br><br>
+            <strong>まとめ:</strong> TLSの安全性は「server.key を誰も盗まない」という一点に集約されます。<br>
+            アルゴリズムは全部公開されている。鍵だけが秘密。<br>
+            これが "Security through key secrecy, not obscurity" です。」
+          </div>
+          <div class="mc-question">
+            💬 発展問: では Forward Secrecy（前方秘匿性）って何？RSA鍵交換の何が問題？<br>
+            → TLS 1.3 では RSA鍵交換が廃止されECDHEのみになった理由
+          </div>
+        </div>
+
+      </div><!-- /mc-list -->
+    </div><!-- /tab-mc -->
+
+    </div><!-- /side-content -->
+  </div><!-- /side-pane -->
+
+</div><!-- /layout -->
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  WebCrypto ユーティリティ
+// ══════════════════════════════════════════════════════════════
+const hexToU8 = h => new Uint8Array(h.match(/.{2}/g).map(b => parseInt(b,16)));
+const u8ToHex = u => Array.from(u).map(b => b.toString(16).padStart(2,'0')).join('');
+const strToHex = s => Array.from(new TextEncoder().encode(s))
+                         .map(b=>b.toString(16).padStart(2,'0')).join('');
+const b64ToU8  = b => { try {
+  const s = atob(b.trim().replace(/\s/g,''));
+  return new Uint8Array(s.length).map((_,i) => s.charCodeAt(i));
+} catch(e) { throw new Error('base64デコード失敗: ' + e.message); }};
+const u8ToStr  = u => new TextDecoder().decode(u);
+
+async function hmacSha256(keyHex, dataHex) {
+  const key = await crypto.subtle.importKey(
+    'raw', hexToU8(keyHex),
+    { name:'HMAC', hash:{name:'SHA-256'} }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, hexToU8(dataHex));
+  return u8ToHex(new Uint8Array(sig));
+}
+
+async function tlsPrf(secretHex, label, seedHex, len) {
+  const a0 = strToHex(label) + seedHex;
+  let out = '', a = a0;
+  while (out.length < len*2) {
+    a = await hmacSha256(secretHex, a);
+    out += await hmacSha256(secretHex, a + a0);
+  }
+  return out.slice(0, len*2);
+}
+
+async function aesCbcDecrypt(keyHex, ivHex, ctBytes) {
+  const key = await crypto.subtle.importKey(
+    'raw', hexToU8(keyHex), {name:'AES-CBC'}, false, ['decrypt']
+  );
+  return new Uint8Array(await crypto.subtle.decrypt(
+    {name:'AES-CBC', iv: hexToU8(ivHex)}, key, ctBytes
+  ));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UI ヘルパー
+// ══════════════════════════════════════════════════════════════
+function setStep(id, iconClass, iconChar, detailClass, detailText) {
+  const ico  = document.getElementById(id+'-ico');
+  const det  = document.getElementById(id+'-d');
+  const step = document.getElementById(id);
+  ico.className   = 'step-icon ' + iconClass;
+  ico.textContent = iconChar;
+  if(detailClass === 'code') {
+    det.className = 'step-detail code';
+  } else {
+    det.className = 'step-detail ' + detailClass;
+  }
+  det.textContent = detailText;
+  setTimeout(() => step.classList.add('show'), 50);
+}
+
+function showStep(id)  { document.getElementById(id).classList.add('show'); }
+function delay(ms)     { return new Promise(r => setTimeout(r, ms)); }
+
+// ══════════════════════════════════════════════════════════════
+//  盗聴チャレンジ
+// ══════════════════════════════════════════════════════════════
+async function runChallenge() {
+  const cr   = document.getElementById('cr').value.trim().replace(/\s/g,'');
+  const sr   = document.getElementById('sr').value.trim().replace(/\s/g,'');
+  const epms = document.getElementById('epms').value.trim();
+  const ct   = document.getElementById('ct').value.trim();
+
+  if (!cr || !sr || !epms || !ct) {
+    alert('すべての項目を入力してください');
+    return;
+  }
+
+  const btn = document.getElementById('hack-btn');
+  btn.disabled = true; btn.textContent = '攻撃中...';
+
+  const res = document.getElementById('results');
+  res.classList.add('visible');
+  document.getElementById('wall-block').style.display = 'none';
+
+  // リセット
+  ['s1','s2','s3','s4'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+    document.getElementById(id+'-ico').className = 'step-icon wait';
+    document.getElementById(id+'-ico').textContent = '⋯';
+  });
+
+  await delay(200);
+
+  // ── Step 1: PMS 復号の試み ─────────────────────────────────
+  setStep('s1','wait','⋯','','RSA復号を試みています...');
+  showStep('s1');
+  await delay(900);
+
+  // RSA復号はブラウザJSで秘密鍵なしに不可能 → 必ず失敗
+  setStep('s1','fail','✗','fail',
+    '❌ 失敗: server.key（秘密鍵）が必要です。\n公開鍵では暗号化しかできません。');
+  await delay(600);
+
+  // ── Step 2: Master Secret ─────────────────────────────────
+  setStep('s2','skip','—','','Step1 が失敗したため計算不可能...');
+  showStep('s2');
+  await delay(500);
+  setStep('s2','fail','✗','fail','❌ スキップ: PMS が不明のため Master Secret を計算できない');
+  await delay(400);
+
+  // ── Step 3: Session Keys ──────────────────────────────────
+  setStep('s3','skip','—','','Step2 が失敗したため計算不可能...');
+  showStep('s3');
+  await delay(500);
+  setStep('s3','fail','✗','fail','❌ スキップ: Master Secret が不明のため Session Keys を導出できない');
+  await delay(400);
+
+  // ── Step 4: 復号 ──────────────────────────────────────────
+  setStep('s4','skip','—','','Step3 が失敗したため復号不可能...');
+  showStep('s4');
+  await delay(500);
+  setStep('s4','fail','✗','fail','❌ スキップ: client_write_key / IV が不明のため復号できない');
+  await delay(600);
+
+  document.getElementById('wall-block').style.display = 'block';
+
+  btn.disabled = false;
+  btn.textContent = '🔓 もう一度試す';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  検証モード（PMS入力で全経路確認）
+// ══════════════════════════════════════════════════════════════
+async function runVerify() {
+  const cr    = document.getElementById('cr').value.trim().replace(/\s/g,'');
+  const sr    = document.getElementById('sr').value.trim().replace(/\s/g,'');
+  const ct    = document.getElementById('ct').value.trim();
+  const pmsH  = document.getElementById('pms-input').value.trim().replace(/\s/g,'');
+  const res   = document.getElementById('verify-result');
+
+  if (!cr || !sr || !ct || !pmsH) {
+    res.innerHTML = '<div style="color:var(--red);font-size:12px;">⚠ 上のフォームの全項目 + PMS を入力してください</div>';
+    res.className = 'visible'; return;
+  }
+  if (pmsH.length !== 96) {
+    res.innerHTML = `<div style="color:var(--red);font-size:12px;">⚠ PMS は hex 96文字 (48バイト) 必要です (入力: ${pmsH.length}文字)</div>`;
+    res.className = 'visible'; return;
+  }
+
+  res.innerHTML = '<div style="color:var(--yellow);font-size:12px;">⏳ 計算中...</div>';
+  res.className = 'visible';
+
+  try {
+    // Master Secret
+    const ms = await tlsPrf(pmsH, 'master secret', cr+sr, 48);
+
+    // Key Expansion
+    const km = await tlsPrf(ms, 'key expansion', sr+cr, 128);
+    const cwMac = km.slice(0,64);
+    const cwKey = km.slice(128,160);
+    const cwIv  = km.slice(192,224);
+
+    // AES-CBC 復号
+    const ctBytes = b64ToU8(ct);
+    let plain;
+    try {
+      plain = await aesCbcDecrypt(cwKey, cwIv, ctBytes);
+    } catch(e) {
+      throw new Error('AES復号失敗: PMSが正しくない可能性があります。' + e.message);
+    }
+
+    // MAC 検証 (末尾 32バイトが MAC)
+    const msgBytes = plain.slice(0, plain.length - 32);
+    const recvMac  = u8ToHex(plain.slice(plain.length - 32));
+
+    const msgHex   = u8ToHex(msgBytes);
+    const seq      = '0000000000000000';
+    const calcMac  = await hmacSha256(cwMac, seq + msgHex);
+
+    const macOk    = calcMac === recvMac;
+    const msgTxt   = u8ToStr(msgBytes);
+
+    res.innerHTML = `
+      <div class="success-banner">
+        <div>✅ ${macOk ? 'MAC検証 成功！改ざんなし' : '⚠ MAC不一致 (PMSが正しくないか、鍵ズレ)'}</div>
+        <div class="msg-content">「${escHtml(msgTxt)}」</div>
+        <div style="margin-top:10px; font-size:10px; color:var(--dim);">
+          Master Secret: ${ms.slice(0,24)}...<br>
+          client_write_key: ${cwKey}<br>
+          client_write_iv:  ${cwIv}
+        </div>
+      </div>`;
+  } catch(e) {
+    res.innerHTML = `<div style="color:var(--red);font-size:12px;">✗ エラー: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  タブ切替
+// ══════════════════════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.side-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.side-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
