@@ -1,0 +1,8 @@
+.DS_Store
+*.csr
+*.crt
+*.key
+*.srl
+*.log
+*.bin
+*.ipynb_checkpoints
